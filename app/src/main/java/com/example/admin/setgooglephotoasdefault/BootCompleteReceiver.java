@@ -1,25 +1,27 @@
 package com.example.admin.setgooglephotoasdefault;
 
-import android.content.ComponentName;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ComponentName;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.PatternMatcher;
-import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.telecom.Log;
-import android.view.View;
-import android.widget.Button;
+import android.widget.Toast;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-public class MainActivity extends AppCompatActivity {
-    private Button mButton;
+/**
+ * Created by Admin on 2017/5/4.
+ */
+
+public class BootCompleteReceiver extends BroadcastReceiver {
     private static final String CAT_PICTURE = "Pictures";
     private static final String CAT_PICTURE_PNG = "Pictures_png";
     private static final String CAT_PICTURE_JPG = "Pictures_jpg";
@@ -37,38 +39,28 @@ public class MainActivity extends AppCompatActivity {
             CAT_PICTURE_JPG,
             CAT_PICTURE_BMP,
     };
-
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        mButton = (Button) findViewById(R.id.button);
-        mButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Context context = MainActivity.this.getApplicationContext();
+    public void onReceive(Context context, Intent intentSys) {
+        Toast.makeText(context, "Boot Completed !", Toast.LENGTH_LONG).show();
+        for (String c : CATEGORIES_ID_PICTURE_LIST) {
+            Intent intent = getIntentForApplication(c);
+            List<ResolveInfo> resolveInfoList = context.getPackageManager().
+                    queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
+            Log.d(TAG, "resolveInfoList: " + resolveInfoList);
 
-                for (String c : CATEGORIES_ID_PICTURE_LIST) {
-                    Intent intent = getIntentForApplication(c);
-                    List<ResolveInfo> resolveInfoList = context.getPackageManager().
-                            queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
-                    Log.d(TAG, "resolveInfoList: " + resolveInfoList);
-
-                    ResolveInfo googlePhoto = null;
-                    for (int i = 0; i < resolveInfoList.size(); i++) {
-                        Log.d(TAG, "i = " + i + resolveInfoList.get(i).activityInfo.packageName);
-                        if (resolveInfoList.get(i).activityInfo.packageName.equals("com.google.android.apps.photos")) {
-                            googlePhoto = resolveInfoList.get(i);
-                            break;
-                        }
-                    }
-                    if (googlePhoto != null) {
-                        Log.d(TAG, "call SetDefaultActivity");
-                        SetDefaultActivity(context, resolveInfoList, googlePhoto, c, true);
-                    }
+            ResolveInfo googlePhoto = null;
+            for (int i = 0; i < resolveInfoList.size(); i++) {
+                Log.d(TAG, "i = " + i + resolveInfoList.get(i).activityInfo.packageName);
+                if (resolveInfoList.get(i).activityInfo.packageName.equals("com.google.android.apps.photos")) {
+                    googlePhoto = resolveInfoList.get(i);
+                    break;
                 }
             }
-        });
+            if (googlePhoto != null) {
+                Log.d(TAG, "call SetDefaultActivity");
+                SetDefaultActivity(context, resolveInfoList, googlePhoto, c, true);
+            }
+        }
     }
 
     public static void SetDefaultActivity(Context context, List<ResolveInfo> resolveInfoList, ResolveInfo resolveInfo, String appCategory, boolean clearOld) {
@@ -288,4 +280,5 @@ public class MainActivity extends AppCompatActivity {
     {
         return context.getPackageManager().resolveActivity(getIntentForApplication(appCategory), PackageManager.MATCH_DEFAULT_ONLY);
     }
+
 }
