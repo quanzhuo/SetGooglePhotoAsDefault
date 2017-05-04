@@ -12,7 +12,6 @@ import android.net.Uri;
 import android.os.PatternMatcher;
 import android.telecom.Log;
 import android.widget.Toast;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -28,18 +27,19 @@ public class BootCompleteReceiver extends BroadcastReceiver {
     private static final String CAT_PICTURE_JPG = "Pictures_jpg";
     private static final String CAT_PICTURE_BMP = "Pictures_bmp";
     private static final String SYSTEM_DEFAULT_PACKAGENAME = "android";
-    private static final String SUPERPOWERSAVING_PACKAGENAME="com.fihndc.superpowersaving";
-    private static final String SETTING_PACKAGENAME="com.android.settings";
+    private static final String SUPERPOWERSAVING_PACKAGENAME = "com.fihndc.superpowersaving";
+    private static final String SETTING_PACKAGENAME = "com.android.settings";
     private static final String CAT_LAUNCHER = "Launcher";
     private static final String CONTACT_NONE_PHONE_ACTIVITY = "com.android.contacts.activities.NonPhoneActivity";
     private static final String CAT_DIALER = "Dialer";
-    private static final String TAG = "fucking";
+    private static final String TAG = "SetGooglePhotoAsDefault";
     private static final String[] CATEGORIES_ID_PICTURE_LIST = new String[]{
             CAT_PICTURE,
             CAT_PICTURE_PNG,
             CAT_PICTURE_JPG,
             CAT_PICTURE_BMP,
     };
+
     @Override
     public void onReceive(Context context, Intent intentSys) {
         SharedPreferences preferences = context.getSharedPreferences("config", 0);
@@ -52,14 +52,15 @@ public class BootCompleteReceiver extends BroadcastReceiver {
             editor.commit();
             System.exit(0);
         }
-        Toast.makeText(context, "Set Google Photo as the default photo viewer",
-                Toast.LENGTH_LONG).show();
-        for (String c : CATEGORIES_ID_PICTURE_LIST) {
-            Intent intent = getIntentForApplication(c);
+//        Toast.makeText(context, "Set Google Photo as the default photo viewer",
+//                Toast.LENGTH_LONG).show();
+        for (String cat : CATEGORIES_ID_PICTURE_LIST) {
+            Intent intent = getIntentForApplication(cat);
+            // Get all the supported activities as a List<ResolveInfo> object
             List<ResolveInfo> resolveInfoList = context.getPackageManager().
                     queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
-            Log.d(TAG, "resolveInfoList: " + resolveInfoList);
 
+            // Get com.google.android.apps.photos as a ResolveInfo object.
             ResolveInfo googlePhoto = null;
             for (int i = 0; i < resolveInfoList.size(); i++) {
                 Log.d(TAG, "i = " + i + resolveInfoList.get(i).activityInfo.packageName);
@@ -69,13 +70,18 @@ public class BootCompleteReceiver extends BroadcastReceiver {
                 }
             }
             if (googlePhoto != null) {
-                Log.d(TAG, "call SetDefaultActivity");
-                SetDefaultActivity(context, resolveInfoList, googlePhoto, c, true);
+                Log.d(TAG, "Call SetDefaultActivity on category " + cat);
+                // We just call function SetDefaultActivity writen by jinsheng.zheng
+                SetDefaultActivity(context, resolveInfoList, googlePhoto, cat, true);
             }
         }
     }
 
-    public static void SetDefaultActivity(Context context, List<ResolveInfo> resolveInfoList, ResolveInfo resolveInfo, String appCategory, boolean clearOld) {
+    public static void SetDefaultActivity(Context context,
+                                          List<ResolveInfo> resolveInfoList,
+                                          ResolveInfo resolveInfo,
+                                          String appCategory,
+                                          boolean clearOld) {
 
         PackageManager pm = context.getPackageManager();
         Intent intent = getIntentForApplication(appCategory);
@@ -176,7 +182,6 @@ public class BootCompleteReceiver extends BroadcastReceiver {
                         }
                     }
                 }
-
             }
         }
 
@@ -189,7 +194,6 @@ public class BootCompleteReceiver extends BroadcastReceiver {
             SetDefaultActivity(context, getSupportActivityList(context, revertCateList.get(i)), resolveActivity, revertCateList.get(i), false);
         }
     }
-
 
     public static Intent getIntentForApplication(String appCategory) {
         Intent intent = new Intent();
@@ -208,68 +212,47 @@ public class BootCompleteReceiver extends BroadcastReceiver {
         }
         return intent;
     }
-    public static int getSupportActivityCount(Context context, String appCategory){
-        //PackageManager pm = context.getPackageManager();
-        List<ResolveInfo> resolveInfoList = getSupportActivityList(context, appCategory);
-        if(resolveInfoList == null)return 0;
-//		Log.i(TAG,">>----------------------\n"
-//		+"getSupportActivityCount appCategory:"+appCategory+" size:"+resolveInfoList.size());
-//		for(int i = 0; i < resolveInfoList.size(); i++){
-//			Log.i(TAG,"activity i:"+i
-//					+"\n applicationInfo:"+pm.getApplicationLabel(resolveInfoList.get(i).activityInfo.applicationInfo)
-//					+"\n resolvePackageName:"+resolveInfoList.get(i).resolvePackageName
-//					+"\n packageName:"+resolveInfoList.get(i).activityInfo.packageName
-//					+"\n activity name:"+resolveInfoList.get(i).activityInfo.name
-//					+"\n applicationInfo className:"+resolveInfoList.get(i).activityInfo.applicationInfo.className
-//					//+"\n isDefault:"+resolveInfoList.get(i).isDefault
-//					//+"\n preferredOrder:"+resolveInfoList.get(i).preferredOrder
-//					//+"\n match:"+resolveInfoList.get(i).match
-//					+"\n icon:"+resolveInfoList.get(i).icon
-//					+"\n activityInfo icon:"+resolveInfoList.get(i).activityInfo.icon
-//					+"\n activityInfo.getIconResource icon:"+resolveInfoList.get(i).activityInfo.getIconResource()
-//					+"\n applicationInfo icon:"+resolveInfoList.get(i).activityInfo.applicationInfo.icon
-//					+"\n------------------------>>\n");
-//		}
 
+    public static int getSupportActivityCount(Context context, String appCategory) {
+        List<ResolveInfo> resolveInfoList = getSupportActivityList(context, appCategory);
+        if (resolveInfoList == null) return 0;
         return resolveInfoList.size();
     }
 
-    public static List<ResolveInfo> getSupportActivityList(Context context, String appCategory)
-    {
+    public static List<ResolveInfo> getSupportActivityList(Context context, String appCategory) {
         List<ResolveInfo> supportList = context.getPackageManager().queryIntentActivities(getIntentForApplication(appCategory), PackageManager.MATCH_DEFAULT_ONLY);
-        if(CAT_DIALER.equals(appCategory)){
-            for(int i = 0; i < supportList.size(); i++){
-                if(CONTACT_NONE_PHONE_ACTIVITY.equals(supportList.get(i).activityInfo.name)){
+        if (CAT_DIALER.equals(appCategory)) {
+            for (int i = 0; i < supportList.size(); i++) {
+                if (CONTACT_NONE_PHONE_ACTIVITY.equals(supportList.get(i).activityInfo.name)) {
                     supportList.remove(i);
                 }
             }
-        }else if(CAT_LAUNCHER.equals(appCategory)){//20151215 Jinsheng remove super power saving from launcher list
-            for(int i = 0; i < supportList.size(); i++){
-                if(SUPERPOWERSAVING_PACKAGENAME.equals(supportList.get(i).activityInfo.packageName) ||SETTING_PACKAGENAME.equals(supportList.get(i).activityInfo.packageName)){
+        } else if (CAT_LAUNCHER.equals(appCategory)) {//20151215 Jinsheng remove super power saving from launcher list
+            for (int i = 0; i < supportList.size(); i++) {
+                if (SUPERPOWERSAVING_PACKAGENAME.equals(supportList.get(i).activityInfo.packageName) || SETTING_PACKAGENAME.equals(supportList.get(i).activityInfo.packageName)) {
                     supportList.remove(i);
                     break;
                 }
             }
         }
-
         return supportList;
     }
 
-    public static boolean isPictureCategory(String appCategory){
-        for(int i = 0; i < CATEGORIES_ID_PICTURE_LIST.length; i++){
-            if(appCategory.equals(CATEGORIES_ID_PICTURE_LIST[i])){
+    public static boolean isPictureCategory(String appCategory) {
+        for (int i = 0; i < CATEGORIES_ID_PICTURE_LIST.length; i++) {
+            if (appCategory.equals(CATEGORIES_ID_PICTURE_LIST[i])) {
                 return true;
             }
         }
         return false;
     }
 
-    public static ArrayList<String> isSetAsDefaultPictureActivity(Context context, String setAppCategory, String cleanPackageName){
+    public static ArrayList<String> isSetAsDefaultPictureActivity(Context context, String setAppCategory, String cleanPackageName) {
         ArrayList<String> setList = new ArrayList<String>();
-        for(int i = 0; i < CATEGORIES_ID_PICTURE_LIST.length; i++){
-            if(!setAppCategory.equals(CATEGORIES_ID_PICTURE_LIST[i])){
+        for (int i = 0; i < CATEGORIES_ID_PICTURE_LIST.length; i++) {
+            if (!setAppCategory.equals(CATEGORIES_ID_PICTURE_LIST[i])) {
                 String pn = getCurrentDefaultAppPackageName(context, CATEGORIES_ID_PICTURE_LIST[i]);
-                if(cleanPackageName.equals(pn)){
+                if (cleanPackageName.equals(pn)) {
                     setList.add(CATEGORIES_ID_PICTURE_LIST[i]);
                 }
             }
@@ -277,20 +260,17 @@ public class BootCompleteReceiver extends BroadcastReceiver {
         return setList;
     }
 
-    public static String getCurrentDefaultAppPackageName(Context context, String appCategory)
-    {
+    public static String getCurrentDefaultAppPackageName(Context context, String appCategory) {
         String appName = null;
         PackageManager pm = context.getPackageManager();
-        ResolveInfo resolveInfo = getCurrentDefaultActivity(context,appCategory);
-        if(resolveInfo != null && !SYSTEM_DEFAULT_PACKAGENAME.equals(resolveInfo.activityInfo.packageName)){
+        ResolveInfo resolveInfo = getCurrentDefaultActivity(context, appCategory);
+        if (resolveInfo != null && !SYSTEM_DEFAULT_PACKAGENAME.equals(resolveInfo.activityInfo.packageName)) {
             appName = resolveInfo.activityInfo.packageName;
         }
         return appName;
     }
 
-    public static ResolveInfo getCurrentDefaultActivity(Context context, String appCategory)
-    {
+    public static ResolveInfo getCurrentDefaultActivity(Context context, String appCategory) {
         return context.getPackageManager().resolveActivity(getIntentForApplication(appCategory), PackageManager.MATCH_DEFAULT_ONLY);
     }
-
 }
