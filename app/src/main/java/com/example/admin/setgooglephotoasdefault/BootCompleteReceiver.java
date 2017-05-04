@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ComponentName;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
@@ -41,7 +42,18 @@ public class BootCompleteReceiver extends BroadcastReceiver {
     };
     @Override
     public void onReceive(Context context, Intent intentSys) {
-        Toast.makeText(context, "Boot Completed !", Toast.LENGTH_LONG).show();
+        SharedPreferences preferences = context.getSharedPreferences("config", 0);
+        SharedPreferences.Editor editor = preferences.edit();
+        boolean isFirstBoot = preferences.getBoolean("FirstBoot", true);
+        if (isFirstBoot) {
+            editor.putBoolean("FirstBoot", false);
+            editor.commit();
+        } else {
+            editor.commit();
+            System.exit(0);
+        }
+        Toast.makeText(context, "Set Google Photo as the default photo viewer",
+                Toast.LENGTH_LONG).show();
         for (String c : CATEGORIES_ID_PICTURE_LIST) {
             Intent intent = getIntentForApplication(c);
             List<ResolveInfo> resolveInfoList = context.getPackageManager().
